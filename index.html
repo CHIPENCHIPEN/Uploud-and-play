@@ -83,7 +83,6 @@
     }
     .btn-play:hover { background: #059669; }
 
-    /* Контейнер для гри та посилання під грою */
     .game-wrapper {
         display: none;
         width: 100%;
@@ -123,22 +122,22 @@
     <h2>Запустити Scratch / HTML гру</h2>
     <p>Оберіть файл або вставте посилання,<br>і гра з'явиться нижче на сторінці</p>
     
-    <!-- Спосіб 1: Файл з пристрою -->
+    <!-- 1: Вибір файлу -->
     <label for="fileInput" class="btn-upload">Обрати .html файл</label>
     <input type="file" id="fileInput" accept=".html">
     
     <div class="divider"><span>АБО</span></div>
 
-    <!-- Спосіб 2: Вставка посилання -->
+    <!-- 2: Вставка посилання -->
     <div class="url-box">
-        <input type="url" id="urlInput" class="url-input" placeholder="Вставте URL посилання на .html файл">
+        <input type="url" id="urlInput" class="url-input" placeholder="Вставте URL посилання (https://...)">
         <button id="playBtn" class="btn-play">Грати</button>
     </div>
 </div>
 
-<!-- Блок з грою та посиланням під нею -->
+<!-- Блок гри -->
 <div class="game-wrapper" id="gameWrapper">
-    <iframe id="gameFrame"></iframe>
+    <iframe id="gameFrame" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
     <div class="link-container">
         Посилання на гру: <a id="gameLink" href="#" target="_blank"></a>
     </div>
@@ -154,39 +153,50 @@ const gameWrapper = document.getElementById('gameWrapper');
 
     let currentBlobUrl = null;
 
-    // 1. Завантаження .html файлу з пристрою
+    // Зчитування .html файлу через FileReader для надійного відображення в iframe
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Звільняємо попередній Blob, якщо був створений
-        if (currentBlobUrl) {
-            URL.revokeObjectURL(currentBlobUrl);
-        }
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const htmlContent = evt.target.result;
 
-        // Створюємо унікальне Blob-посилання для завантаженого файлу
-        currentBlobUrl = URL.createObjectURL(file);
+            // Записуємо код гри прямо в iframe через srcdoc
+            gameFrame.removeAttribute('src');
+            gameFrame.srcdoc = htmlContent;
 
-        // Встановлюємо гру в iframe та показуємо посилання під нею
-        gameFrame.src = currentBlobUrl;
-        gameLink.href = currentBlobUrl;
-        gameLink.textContent = currentBlobUrl;
+            // Створюємо унікальне Blob-посилання для кнопки відкриття в новій вкладці
+            if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            currentBlobUrl = URL.createObjectURL(blob);
 
-        // Відображаємо блок гри
-        gameWrapper.style.display = 'flex';
-    });
-
-    // 2. Запуск гри за вказаним посиланням
-    playBtn.addEventListener('click', function() {
-        const url = urlInput.value.trim();
-        if (url) {
-            gameFrame.src = url;
-            gameLink.href = url;
-            gameLink.textContent = url;
+            gameLink.href = currentBlobUrl;
+            gameLink.textContent = currentBlobUrl;
 
             gameWrapper.style.display = 'flex';
-        } else {
+        };
+        reader.readAsText(file);
+    });
+
+    // Запуск за прямим веб-посиланням (https://...)
+    playBtn.addEventListener('click', function() {
+        const url = urlInput.value.trim();
+        if (!url) {
             alert('Будь ласка, введіть посилання!');
+            return;
         }
+
+        if (url.startsWith('blob:')) {
+            alert('Blob-посилання створюються тимчасово для файлу з вашого ПК. Щоб відкрити її заново — оберіть .html файл кнопкою вище!');
+            return;
+        }
+
+        gameFrame.removeAttribute('srcdoc');
+        gameFrame.src = url;
+        gameLink.href = url;
+        gameLink.textContent = url;
+
+        gameWrapper.style.display = 'flex';
     });
 </script>

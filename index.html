@@ -104,36 +104,29 @@
     const urlInput = document.getElementById('urlInput');
     const playBtn = document.getElementById('playBtn');
 
-    // 1. Відкриття локального файлу в новій вкладці
+    // 1. Відкриття файлу в новій вкладці з унікальним Blob-посиланням
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const htmlContent = event.target.result;
-            
-            // Відкриваємо нове порожнє вікно/вкладку
-            const newWindow = window.open('', '_blank');
-            if (newWindow) {
-                // Записуємо код гри прямо у нову вкладку
-                newWindow.document.open();
-                newWindow.document.write(htmlContent);
-                newWindow.document.close();
-            } else {
-                alert('Браузер заблокував спливаюче вікно. Дозвольте спливаючі вікна для цього сайту!');
-            }
-        };
-        reader.readAsText(file);
+        // Створюємо тимчасовий унікальний URL для файлу в пам'яті браузера
+        const blobUrl = URL.createObjectURL(file);
+
+        // Відкриваємо нову вкладку напряму за цією унікальною адресою
+        const newTab = window.open(blobUrl, '_blank');
+
+        if (!newTab) {
+            alert('Браузер заблокував спливаюче вікно. Дозвольте спливаючі вікна!');
+        }
     });
 
-    // 2. Відкриття гри за URL-посиланням в новій вкладці
+    // 2. Відкриття гри за вказаним URL-посиланням у новій вкладці
     playBtn.addEventListener('click', function() {
         const url = urlInput.value.trim();
         if (url) {
             window.open(url, '_blank');
         } else {
-alert('Будь ласка, введіть посилання на файл!');
+            alert('Будь ласка, введіть посилання на файл!');
         }
     });
 </script>

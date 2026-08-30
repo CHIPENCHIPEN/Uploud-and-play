@@ -81,19 +81,10 @@
         font-weight: bold;
     }
     .btn-play:hover { background: #059669; }
-
-    iframe {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        border: none;
-        display: none;
-        background: #000;
-    }
 </style>
-<div id="main-card" class="card">
+<div class="card">
     <h2>Запустити Scratch / HTML гру</h2>
-    <p>Завантажте файл зі свого пристрою або вставте посилання</p>
+    <p>Завантажте файл або вставте посилання,<br>і гра відкриється в окремому вікні</p>
     
     <!-- Спосіб 1: Файл з пристрою -->
     <label for="fileInput" class="btn-upload">Обрати .html файл</label>
@@ -108,47 +99,41 @@
     </div>
 </div>
 
-<!-- Вікно з грою -->
-<iframe id="player" allowfullscreen allow="autoplay; gamepad; microphone"></iframe>
-
 <script>
     const fileInput = document.getElementById('fileInput');
     const urlInput = document.getElementById('urlInput');
     const playBtn = document.getElementById('playBtn');
-    const mainCard = document.getElementById('main-card');
-    const player = document.getElementById('player');
 
-    // Функція запуску гри у повноекранному вікні
-    function launchGame(src, isDirectCode = false) {
-        mainCard.style.display = 'none';
-        player.style.display = 'block';
-
-        if (isDirectCode) {
-            player.srcdoc = src;
-        } else {
-            player.src = src;
-        }
-    }
-
-    // 1. Обробка локального .html файлу
+    // 1. Відкриття локального файлу в новій вкладці
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = function(event) {
-            launchGame(event.target.result, true);
+            const htmlContent = event.target.result;
+            
+            // Відкриваємо нове порожнє вікно/вкладку
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+                // Записуємо код гри прямо у нову вкладку
+                newWindow.document.open();
+                newWindow.document.write(htmlContent);
+                newWindow.document.close();
+            } else {
+                alert('Браузер заблокував спливаюче вікно. Дозвольте спливаючі вікна для цього сайту!');
+            }
         };
         reader.readAsText(file);
     });
 
-    // 2. Обробка посилання
+    // 2. Відкриття гри за URL-посиланням в новій вкладці
     playBtn.addEventListener('click', function() {
-const url = urlInput.value.trim();
+        const url = urlInput.value.trim();
         if (url) {
-            launchGame(url, false);
+            window.open(url, '_blank');
         } else {
-            alert('Будь ласка, введіть посилання на файл!');
+alert('Будь ласка, введіть посилання на файл!');
         }
     });
 </script>

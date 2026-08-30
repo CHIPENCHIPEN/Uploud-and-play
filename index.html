@@ -10,19 +10,20 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         min-height: 100vh;
-        overflow: hidden;
+        padding: 30px 15px;
     }
     .card {
         background: #1e1e1e;
         padding: 30px;
         border-radius: 12px;
         text-align: center;
-        max-width: 480px;
-        width: 90%;
+        max-width: 500px;
+        width: 100%;
         border: 1px solid #333;
         box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        margin-bottom: 25px;
     }
     h2 { margin-bottom: 10px; font-size: 22px; }
     p { color: #aaa; font-size: 14px; margin-bottom: 20px; }
@@ -81,19 +82,65 @@
         font-weight: bold;
     }
     .btn-play:hover { background: #059669; }
+
+    /* Контейнер для гри та посилання під грою */
+    .game-wrapper {
+        display: none;
+        width: 100%;
+        max-width: 960px;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    iframe {
+        width: 100%;
+        height: 600px;
+        border: 2px solid #333;
+        border-radius: 12px;
+        background-color: #000;
+    }
+    .link-container {
+        background: #1e1e1e;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid #333;
+        width: 100%;
+        word-break: break-all;
+        text-align: center;
+        font-size: 14px;
+        color: #aaa;
+    }
+    .link-container a {
+        color: #60a5fa;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .link-container a:hover {
+        text-decoration: underline;
+    }
 </style>
 <div class="card">
     <h2>Запустити Scratch / HTML гру</h2>
-    <p>Завантажте файл або вставте посилання,<br>і гра відкриється в окремому вікні</p>
+    <p>Оберіть файл або вставте посилання,<br>і гра з'явиться нижче на сторінці</p>
     
+    <!-- Спосіб 1: Файл з пристрою -->
     <label for="fileInput" class="btn-upload">Обрати .html файл</label>
     <input type="file" id="fileInput" accept=".html">
     
     <div class="divider"><span>АБО</span></div>
 
+    <!-- Спосіб 2: Вставка посилання -->
     <div class="url-box">
         <input type="url" id="urlInput" class="url-input" placeholder="Вставте URL посилання на .html файл">
         <button id="playBtn" class="btn-play">Грати</button>
+    </div>
+</div>
+
+<!-- Блок з грою та посиланням під нею -->
+<div class="game-wrapper" id="gameWrapper">
+    <iframe id="gameFrame"></iframe>
+    <div class="link-container">
+        Посилання на гру: <a id="gameLink" href="#" target="_blank"></a>
     </div>
 </div>
 
@@ -101,31 +148,45 @@
     const fileInput = document.getElementById('fileInput');
     const urlInput = document.getElementById('urlInput');
     const playBtn = document.getElementById('playBtn');
+const gameWrapper = document.getElementById('gameWrapper');
+    const gameFrame = document.getElementById('gameFrame');
+    const gameLink = document.getElementById('gameLink');
 
-    // 1. Відкриваємо нову вкладку НЕГАЙНО при виборі файлу (щоб браузер не вважав це спамом)
+    let currentBlobUrl = null;
+
+    // 1. Завантаження .html файлу з пристрою
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Відкриваємо вікно одразу в момент дії користувача
-        const newTab = window.open('about:blank', '_blank');
-
-        if (newTab) {
-            const blobUrl = URL.createObjectURL(file);
-            // Перенаправляємо створену вкладку на Blob-посилання вашої гри
-            newTab.location.href = blobUrl;
-        } else {
-            alert('Будь ласка, дозвольте спливаючі вікна в адресному рядку браузера!');
+        // Звільняємо попередній Blob, якщо був створений
+        if (currentBlobUrl) {
+            URL.revokeObjectURL(currentBlobUrl);
         }
+
+        // Створюємо унікальне Blob-посилання для завантаженого файлу
+        currentBlobUrl = URL.createObjectURL(file);
+
+        // Встановлюємо гру в iframe та показуємо посилання під нею
+        gameFrame.src = currentBlobUrl;
+        gameLink.href = currentBlobUrl;
+        gameLink.textContent = currentBlobUrl;
+
+        // Відображаємо блок гри
+        gameWrapper.style.display = 'flex';
     });
 
-    // 2. Відкриття гри за URL-посиланням у новій вкладці
+    // 2. Запуск гри за вказаним посиланням
     playBtn.addEventListener('click', function() {
         const url = urlInput.value.trim();
         if (url) {
-            window.open(url, '_blank');
+            gameFrame.src = url;
+            gameLink.href = url;
+            gameLink.textContent = url;
+
+            gameWrapper.style.display = 'flex';
         } else {
-            alert('Будь ласка, введіть посилання на файл!');
+            alert('Будь ласка, введіть посилання!');
         }
     });
 </script>

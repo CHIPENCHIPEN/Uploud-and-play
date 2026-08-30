@@ -1,8 +1,6 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="googlebot" content="noindex, nofollow">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
-
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -21,7 +19,7 @@
         padding: 30px;
         border-radius: 12px;
         text-align: center;
-        max-width: 500px;
+        max-width: 480px;
         width: 90%;
         border: 1px solid #333;
         box-shadow: 0 8px 24px rgba(0,0,0,0.6);
@@ -29,6 +27,7 @@
     h2 { margin-bottom: 10px; font-size: 22px; }
     p { color: #aaa; font-size: 14px; margin-bottom: 20px; }
     input[type="file"] { display: none; }
+    
     .btn-upload {
         display: inline-block;
         padding: 12px 24px;
@@ -38,18 +37,51 @@
         cursor: pointer;
         font-weight: bold;
         transition: background 0.2s;
+        width: 100%;
+        margin-bottom: 15px;
     }
     .btn-upload:hover { background: #4338ca; }
-    .link-box {
-        margin-top: 20px;
-        padding: 12px;
-        background: #2a2a2a;
-        border-radius: 8px;
-        border: 1px solid #444;
-        word-break: break-all;
+
+    .divider {
+        margin: 15px 0;
+        color: #666;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
     }
-    a { color: #38bdf8; text-decoration: none; font-weight: bold; }
-    #status { margin-top: 15px; color: #fbbf24; font-size: 14px; }
+    .divider::before, .divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #333;
+    }
+    .divider span { padding: 0 10px; }
+
+    .url-box {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .url-input {
+        flex: 1;
+        padding: 10px;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 6px;
+        color: #fff;
+        outline: none;
+    }
+    .url-input:focus { border-color: #4f46e5; }
+    .btn-play {
+        padding: 10px 16px;
+        background: #10b981;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .btn-play:hover { background: #059669; }
+
     iframe {
         position: fixed;
         top: 0; left: 0;
@@ -59,93 +91,64 @@
         background: #000;
     }
 </style>
-<div id="upload-screen" class="card">
-    <h2>Завантажити HTML гри</h2>
-    <p>Оберіть .html файл з TurboWarp Packager.<br>Отримане посилання можна надсилати друзям!</p>
+<div id="main-card" class="card">
+    <h2>Запустити Scratch / HTML гру</h2>
+    <p>Завантажте файл зі свого пристрою або вставте посилання</p>
     
+    <!-- Спосіб 1: Файл з пристрою -->
     <label for="fileInput" class="btn-upload">Обрати .html файл</label>
     <input type="file" id="fileInput" accept=".html">
     
-    <div id="status"></div>
+    <div class="divider"><span>АБО</span></div>
 
-    <div id="result" style="display: none;">
-        <div class="link-box">
-            <p style="margin-bottom: 5px; color: #fff;">Публічне посилання для друзів:</p>
-            <a id="gameLink" href="#" target="_blank"></a>
-        </div>
+    <!-- Спосіб 2: Вставка посилання -->
+    <div class="url-box">
+        <input type="url" id="urlInput" class="url-input" placeholder="Вставте URL посилання на .html файл">
+        <button id="playBtn" class="btn-play">Грати</button>
     </div>
 </div>
 
+<!-- Вікно з грою -->
 <iframe id="player" allowfullscreen allow="autoplay; gamepad; microphone"></iframe>
 
 <script>
     const fileInput = document.getElementById('fileInput');
-    const uploadScreen = document.getElementById('upload-screen');
-    const resultDiv = document.getElementById('result');
-    const gameLink = document.getElementById('gameLink');
-    const statusDiv = document.getElementById('status');
+    const urlInput = document.getElementById('urlInput');
+    const playBtn = document.getElementById('playBtn');
+    const mainCard = document.getElementById('main-card');
     const player = document.getElementById('player');
 
-    // Ліміт життя посилання: 20 днів (у мілісекундах)
-    const EXPIRATION_TIME = 20 * 24 * 60 * 60 * 1000;
+    // Функція запуску гри у повноекранному вікні
+    function launchGame(src, isDirectCode = false) {
+        mainCard.style.display = 'none';
+        player.style.display = 'block';
 
-    // Завантаження та відкриття гри з посилання
-    function loadGameFromUrl() {
-        const hash = window.location.hash;
-        if (hash.startsWith('#game=')) {
-            try {
-                const payload = hash.replace('#game=', '');
-                // Декодуємо дані з посилання
-                const decompressed = LZString.decompressFromEncodedURIComponent(payload);
-                if (!decompressed) throw new Error("Помилка читання");
-
-                const data = JSON.parse(decompressed);
-                const now = Date.now();
-
-                // Перевірка 20 днів
-                if (now - data.createdAt > EXPIRATION_TIME) {
-                    alert('Термін дії цього посилання вичерпано (минуло понад 20 днів з моменту створення).');
-                    return;
-                }
-
-                // Запускаємо HTML код гри
-                uploadScreen.style.display = 'none';
-                player.style.display = 'block';
-                player.srcdoc = data.html;
-            } catch (e) {
-                alert('Невалідне або пошкоджене посилання на гру.');
-            }
+        if (isDirectCode) {
+            player.srcdoc = src;
+        } else {
+            player.src = src;
         }
     }
-// Обробка вибору файлу та пакування його в публічне посилання
+
+    // 1. Обробка локального .html файлу
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        statusDiv.innerText = 'Генерація публічного посилання...';
-
         const reader = new FileReader();
         reader.onload = function(event) {
-            const htmlContent = event.target.result;
-
-            // Закодовуємо вміст гри та час створення у структурований об'єкт
-            const payloadData = JSON.stringify({
-                html: htmlContent,
-                createdAt: Date.now()
-            });
-
-            // Стискаємо в компактний рядок для URL
-            const compressed = LZString.compressToEncodedURIComponent(payloadData);
-            const fullUrl = window.location.origin + window.location.pathname + '#game=' + compressed;
-
-            statusDiv.innerText = '';
-            gameLink.href = fullUrl;
-            gameLink.innerText = fullUrl;
-            resultDiv.style.display = 'block';
+            launchGame(event.target.result, true);
         };
-
         reader.readAsText(file);
     });
 
-    loadGameFromUrl();
+    // 2. Обробка посилання
+    playBtn.addEventListener('click', function() {
+const url = urlInput.value.trim();
+        if (url) {
+            launchGame(url, false);
+        } else {
+            alert('Будь ласка, введіть посилання на файл!');
+        }
+    });
 </script>

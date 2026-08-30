@@ -1,18 +1,23 @@
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+<!-- Заборона індексації для пошуковиків -->
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="googlebot" content="noindex, nofollow">
 
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
     body {
         background-color: #121212;
-        color: #fff;
-        font-family: Arial, sans-serif;
+        color: #ffffff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
+        overflow: hidden;
     }
     .card {
         background: #1e1e1e;
@@ -22,7 +27,10 @@
         max-width: 480px;
         width: 90%;
         border: 1px solid #333;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     }
+    h2 { margin-bottom: 10px; font-size: 22px; }
+    p { color: #aaa; font-size: 14px; margin-bottom: 20px; }
     input[type="file"] { display: none; }
     .btn-upload {
         display: inline-block;
@@ -32,100 +40,118 @@
         border-radius: 8px;
         cursor: pointer;
         font-weight: bold;
-        margin-top: 15px;
+        transition: background 0.2s;
     }
+    .btn-upload:hover { background: #4338ca; }
     .link-box {
         margin-top: 20px;
         padding: 12px;
         background: #2a2a2a;
         border-radius: 8px;
+        border: 1px solid #444;
         word-break: break-all;
     }
     a { color: #38bdf8; text-decoration: none; font-weight: bold; }
-    #status { margin-top: 15px; color: #fbbf24; }
     iframe {
         position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
         border: none;
         display: none;
         background: #000;
     }
 </style>
+<!-- Екран завантаження -->
 <div id="upload-screen" class="card">
-    <h2>Завантажити Scratch проєкт</h2>
-    <p>Завантажте .sb3 файл, щоб отримати посилання для друзів</p>
+    <h2>Завантажити HTML гри</h2>
+    <p>Оберіть .html файл вашої гри з TurboWarp Packager</p>
     
-    <label for="fileInput" class="btn-upload">Обрати .sb3 файл</label>
-    <input type="file" id="fileInput" accept=".sb3">
+    <label for="fileInput" class="btn-upload">Обрати .html файл</label>
+    <input type="file" id="fileInput" accept=".html">
     
-    <div id="status"></div>
-
     <div id="result" style="display: none;">
         <div class="link-box">
-            <p style="margin-bottom: 5px;">Посилання на гру:</p>
-            <a id="gameLink" href="#" target="_blank"></a>
+            <p style="margin-bottom: 5px; color: #fff;">Посилання на вашу гру:</p>
+            <a id="gameLink" href="#"></a>
         </div>
     </div>
 </div>
 
+<!-- Повноекранний плеєр -->
 <iframe id="player" allowfullscreen allow="autoplay; gamepad; microphone"></iframe>
 
 <script>
-    // 1. Безкоштовна конфігурація Firebase (працює одразу)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAsampleKeyForScratchHost12345",
-        authDomain: "scratch-host-demo.firebaseapp.com",
-        projectId: "scratch-host-demo",
-        storageBucket: "scratch-host-demo.appspot.com",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const storage = firebase.storage();
-
     const fileInput = document.getElementById('fileInput');
     const uploadScreen = document.getElementById('upload-screen');
     const resultDiv = document.getElementById('result');
     const gameLink = document.getElementById('gameLink');
-    const statusDiv = document.getElementById('status');
     const player = document.getElementById('player');
 
-    // 2. Перевірка: якщо у посиланні є ?url=...
-    function checkUrlParam() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const projectUrl = urlParams.get('url');
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('HtmlGamesDB', 1);
+            request.onupgradeneeded = () => request.result.createObjectStore('games');
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
 
-        if (projectUrl) {
-            uploadScreen.style.display = 'none';
-            player.style.display = 'block';
-            // Завантаження через TurboWarp Embed за прямим HTTP-посиланням
-            player.src = `https://turbowarp.org/embed.html?project_url=${encodeURIComponent(projectUrl)}`;
+    async function saveGame(id, htmlCode) {
+        const db = await openDB();
+        const tx = db.transaction('games', 'readwrite');
+        tx.objectStore('games').put(htmlCode, id);
+        return tx.complete;
+    }
+
+    async function getGame(id) {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('games', 'readonly');
+            const req = tx.objectStore('games').get(id);
+            req.onsuccess = () => resolve(req.result);
+        });
+    }
+
+    async function loadGameIfHashExists() {
+        const hash = window.location.hash;
+        if (hash.startsWith('#project=')) {
+            const gameId = hash.replace('#project=', '');
+            const htmlCode = await getGame(gameId);
+            
+            if (htmlCode) {
+                uploadScreen.style.display = 'none';
+                player.style.display = 'block';
+
+                // Запускаємо HTML код прямо всередині iframe через srcdoc
+                player.srcdoc = htmlCode;
+            } else {
+alert('Гру не знайдено на цьому пристрої.');
+            }
         }
     }
 
-    // 3. Завантаження файлу в хмару
     fileInput.addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        statusDiv.innerText = 'Завантаження проєкту в хмару...';
-        const fileName = Date.now() + '_' + file.name;
-        const storageRef = storage.ref('projects/' + fileName);
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            const htmlCode = event.target.result;
+            const gameId = Math.random().toString(36).substring(2, 9);
+            
+            await saveGame(gameId, htmlCode);
 
-        try {
-            await storageRef.put(file);
-            const fileUrl = await storageRef.getDownloadURL();
+            const fullUrl = window.location.origin + window.location.pathname + '#project=' + gameId;
             
-            const shareableUrl = window.location.origin + window.location.pathname + '?url=' + encodeURIComponent(fileUrl);
-            
-            statusDiv.innerText = '';
-            gameLink.href = shareableUrl;
-            gameLink.
-innerText = shareableUrl;
+            gameLink.href = fullUrl;
+            gameLink.innerText = fullUrl;
             resultDiv.style.display = 'block';
-        } catch (err) {
-            statusDiv.innerText = 'Помилка завантаження. Спробуйте менший файл.';
-        }
+        };
+        
+        reader.readAsText(file);
     });
 
-    checkUrlParam();
+    loadGameIfHashExists();
 </script>

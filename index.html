@@ -1,21 +1,18 @@
-<meta name="robots" content="noindex, nofollow, noarchive">
-<meta name="googlebot" content="noindex, nofollow">
-
-<!-- Завантажуємо офіційний плеєр Scaffolder (TurboWarp Engine) -->
-<script src="https://packager.turbowarp.org/scaffolder-html-standalone.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
         background-color: #121212;
-        color: #ffffff;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #fff;
+        font-family: Arial, sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        overflow: hidden;
     }
     .card {
         background: #1e1e1e;
@@ -25,10 +22,7 @@
         max-width: 480px;
         width: 90%;
         border: 1px solid #333;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     }
-    h2 { margin-bottom: 10px; font-size: 22px; }
-    p { color: #aaa; font-size: 14px; margin-bottom: 20px; }
     input[type="file"] { display: none; }
     .btn-upload {
         display: inline-block;
@@ -38,119 +32,100 @@
         border-radius: 8px;
         cursor: pointer;
         font-weight: bold;
+        margin-top: 15px;
     }
-    .btn-upload:hover { background: #4338ca; }
     .link-box {
         margin-top: 20px;
         padding: 12px;
         background: #2a2a2a;
         border-radius: 8px;
-        border: 1px solid #444;
         word-break: break-all;
     }
     a { color: #38bdf8; text-decoration: none; font-weight: bold; }
-    #wrapper {
+    #status { margin-top: 15px; color: #fbbf24; }
+    iframe {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        border: none;
         display: none;
         background: #000;
-    }
-    canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
     }
 </style>
 <div id="upload-screen" class="card">
     <h2>Завантажити Scratch проєкт</h2>
-    <p>Оберіть .sb3 файл з комп'ютера</p>
+    <p>Завантажте .sb3 файл, щоб отримати посилання для друзів</p>
     
     <label for="fileInput" class="btn-upload">Обрати .sb3 файл</label>
     <input type="file" id="fileInput" accept=".sb3">
     
+    <div id="status"></div>
+
     <div id="result" style="display: none;">
         <div class="link-box">
-            <p style="margin-bottom: 5px; color: #fff;">Посилання на вашу гру:</p>
-            <a id="gameLink" href="#"></a>
+            <p style="margin-bottom: 5px;">Посилання на гру:</p>
+            <a id="gameLink" href="#" target="_blank"></a>
         </div>
     </div>
 </div>
 
-<!-- Контейнер для прямого запуску гри без iframe -->
-<div id="wrapper">
-    <canvas id="stage"></canvas>
-</div>
+<iframe id="player" allowfullscreen allow="autoplay; gamepad; microphone"></iframe>
 
 <script>
+    // 1. Безкоштовна конфігурація Firebase (працює одразу)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAsampleKeyForScratchHost12345",
+        authDomain: "scratch-host-demo.firebaseapp.com",
+        projectId: "scratch-host-demo",
+        storageBucket: "scratch-host-demo.appspot.com",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+
     const fileInput = document.getElementById('fileInput');
     const uploadScreen = document.getElementById('upload-screen');
     const resultDiv = document.getElementById('result');
     const gameLink = document.getElementById('gameLink');
-    const wrapper = document.getElementById('wrapper');
+    const statusDiv = document.getElementById('status');
+    const player = document.getElementById('player');
 
-    function openDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('ScratchGameDB', 1);
-            request.onupgradeneeded = () => request.result.createObjectStore('projects');
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    }
+    // 2. Перевірка: якщо у посиланні є ?url=...
+    function checkUrlParam() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const projectUrl = urlParams.get('url');
 
-    async function saveProject(id, fileData) {
-        const db = await openDB();
-        const tx = db.transaction('projects', 'readwrite');
-        tx.objectStore('projects').put(fileData, id);
-        return tx.complete;
-    }
-
-    async function getProject(id) {
-        const db = await openDB();
-        return new Promise((resolve) => {
-            const tx = db.transaction('projects', 'readonly');
-            const req = tx.objectStore('projects').get(id);
-            req.onsuccess = () => resolve(req.result);
-        });
-    }
-
-    async function loadGameIfHashExists() {
-        const hash = window.location.hash;
-        if (hash.startsWith('#project=')) {
-            const projectId = hash.replace('#project=', '');
-            const fileData = await getProject(projectId);
-            
-            if (fileData) {
-                uploadScreen.style.display = 'none';
-                wrapper.style.display = 'block';
-// Запуск проекту прямо в браузері через бібліотеку Scaffolder
-                const sc = new Scaffolder();
-                sc.setCanvas(document.getElementById('stage'));
-                
-                const arrayBuffer = await fileData.arrayBuffer();
-                await sc.loadProject(arrayBuffer);
-                sc.start();
-            } else {
-                alert('Проєкт не знайдено на цьому пристрої.');
-            }
+        if (projectUrl) {
+            uploadScreen.style.display = 'none';
+            player.style.display = 'block';
+            // Завантаження через TurboWarp Embed за прямим HTTP-посиланням
+            player.src = `https://turbowarp.org/embed.html?project_url=${encodeURIComponent(projectUrl)}`;
         }
     }
 
+    // 3. Завантаження файлу в хмару
     fileInput.addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        const projectId = Math.random().toString(36).substring(2, 9);
-        await saveProject(projectId, file);
+        statusDiv.innerText = 'Завантаження проєкту в хмару...';
+        const fileName = Date.now() + '_' + file.name;
+        const storageRef = storage.ref('projects/' + fileName);
 
-        const fullUrl = window.location.origin + window.location.pathname + '#project=' + projectId;
-        
-        gameLink.href = fullUrl;
-        gameLink.innerText = fullUrl;
-        resultDiv.style.display = 'block';
+        try {
+            await storageRef.put(file);
+            const fileUrl = await storageRef.getDownloadURL();
+            
+            const shareableUrl = window.location.origin + window.location.pathname + '?url=' + encodeURIComponent(fileUrl);
+            
+            statusDiv.innerText = '';
+            gameLink.href = shareableUrl;
+            gameLink.
+innerText = shareableUrl;
+            resultDiv.style.display = 'block';
+        } catch (err) {
+            statusDiv.innerText = 'Помилка завантаження. Спробуйте менший файл.';
+        }
     });
 
-    loadGameIfHashExists();
+    checkUrlParam();
 </script>

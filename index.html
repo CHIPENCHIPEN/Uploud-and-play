@@ -91,13 +91,16 @@
         align-items: center;
         gap: 15px;
     }
+    
+    /* Зменшено висоту з 600px до 450px */
     iframe {
         width: 100%;
-        height: 600px;
+        height: 450px; 
         border: 2px solid #333;
         border-radius: 12px;
         background-color: #000;
     }
+
     .link-container {
         background: #1e1e1e;
         padding: 12px 20px;
@@ -120,26 +123,23 @@
 </style>
 <div class="card">
     <h2>Запустити Scratch / HTML гру</h2>
-    <p>Оберіть файл або вставте посилання,<br>і гра з'явиться нижче на сторінці</p>
+    <p>Оберіть файл зі свого ПК або вставте посилання,<br>щоб зіграти прямо на сайті</p>
     
-    <!-- 1: Вибір файлу -->
-    <label for="fileInput" class="btn-upload">Обрати .html файл</label>
+    <label for="fileInput" class="btn-upload">Обрати .html файл з ПК</label>
     <input type="file" id="fileInput" accept=".html">
     
     <div class="divider"><span>АБО</span></div>
 
-    <!-- 2: Вставка посилання -->
     <div class="url-box">
-        <input type="url" id="urlInput" class="url-input" placeholder="Вставте URL посилання (https://...)">
+        <input type="url" id="urlInput" class="url-input" placeholder="Вставте веб-посилання (https://...)">
         <button id="playBtn" class="btn-play">Грати</button>
     </div>
 </div>
 
-<!-- Блок гри -->
 <div class="game-wrapper" id="gameWrapper">
-    <iframe id="gameFrame" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
+    <iframe id="gameFrame" allowfullscreen allow="autoplay; gamepad; microphone; camera"></iframe>
     <div class="link-container">
-        Посилання на гру: <a id="gameLink" href="#" target="_blank"></a>
+        Пряме посилання на гру: <a id="gameLink" href="#" target="_blank"></a>
     </div>
 </div>
 
@@ -147,56 +147,54 @@
     const fileInput = document.getElementById('fileInput');
     const urlInput = document.getElementById('urlInput');
     const playBtn = document.getElementById('playBtn');
-const gameWrapper = document.getElementById('gameWrapper');
+    
+    const gameWrapper = document.
+getElementById('gameWrapper');
     const gameFrame = document.getElementById('gameFrame');
     const gameLink = document.getElementById('gameLink');
 
-    let currentBlobUrl = null;
+    window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        const gameUrl = params.get('game');
+        if (gameUrl) {
+            loadGameUrl(gameUrl);
+        }
+    });
 
-    // Зчитування .html файлу через FileReader для надійного відображення в iframe
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = function(evt) {
-            const htmlContent = evt.target.result;
-
-            // Записуємо код гри прямо в iframe через srcdoc
             gameFrame.removeAttribute('src');
-            gameFrame.srcdoc = htmlContent;
+            gameFrame.srcdoc = evt.target.result;
 
-            // Створюємо унікальне Blob-посилання для кнопки відкриття в новій вкладці
-            if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            currentBlobUrl = URL.createObjectURL(blob);
-
-            gameLink.href = currentBlobUrl;
-            gameLink.textContent = currentBlobUrl;
-
+            gameLink.style.display = 'none';
             gameWrapper.style.display = 'flex';
         };
         reader.readAsText(file);
     });
 
-    // Запуск за прямим веб-посиланням (https://...)
     playBtn.addEventListener('click', function() {
         const url = urlInput.value.trim();
-        if (!url) {
-            alert('Будь ласка, введіть посилання!');
-            return;
+        if (url) {
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('Введіть коректне посилання, що починається з https://');
+                return;
+            }
+            loadGameUrl(url);
+        } else {
+            alert('Введіть посилання на файл гри!');
         }
+    });
 
-        if (url.startsWith('blob:')) {
-            alert('Blob-посилання створюються тимчасово для файлу з вашого ПК. Щоб відкрити її заново — оберіть .html файл кнопкою вище!');
-            return;
-        }
-
+    function loadGameUrl(url) {
         gameFrame.removeAttribute('srcdoc');
         gameFrame.src = url;
+        gameLink.style.display = 'inline';
         gameLink.href = url;
         gameLink.textContent = url;
-
         gameWrapper.style.display = 'flex';
-    });
+    }
 </script>

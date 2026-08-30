@@ -120,15 +120,12 @@
                 uploadScreen.style.display = 'none';
                 player.style.display = 'block';
 
-                // Конвертація в Data URL для сумісності з локальним запускom
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    player.src = `https://turbowarp.org/embed.
-html?project_url=${encodeURIComponent(e.target.result)}`;
-                };
-                reader.readAsDataURL(fileData);
+                // Відкриваємо проєкт через сумісний компилятор PenguinMod/TurboWarp
+                const blob = new Blob([fileData], { type: 'application/x.scratch.sb3' });
+                const blobUrl = URL.createObjectURL(blob);
+player.src = `https://studio.penguinmod.com/embed.html?project_url=${encodeURIComponent(blobUrl)}`;
             } else {
-                alert('Проєкт не знайдено на цьому пристрої.');
+                alert('Проєкт не знайдено на цьому пристрої або дані було очищено.');
             }
         }
     }

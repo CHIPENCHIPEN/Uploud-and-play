@@ -86,13 +86,11 @@
     <h2>Запустити Scratch / HTML гру</h2>
     <p>Завантажте файл або вставте посилання,<br>і гра відкриється в окремому вікні</p>
     
-    <!-- Спосіб 1: Файл з пристрою -->
     <label for="fileInput" class="btn-upload">Обрати .html файл</label>
     <input type="file" id="fileInput" accept=".html">
     
     <div class="divider"><span>АБО</span></div>
 
-    <!-- Спосіб 2: Вставка посилання -->
     <div class="url-box">
         <input type="url" id="urlInput" class="url-input" placeholder="Вставте URL посилання на .html файл">
         <button id="playBtn" class="btn-play">Грати</button>
@@ -104,23 +102,24 @@
     const urlInput = document.getElementById('urlInput');
     const playBtn = document.getElementById('playBtn');
 
-    // 1. Відкриття файлу в новій вкладці з унікальним Blob-посиланням
+    // 1. Відкриваємо нову вкладку НЕГАЙНО при виборі файлу (щоб браузер не вважав це спамом)
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Створюємо тимчасовий унікальний URL для файлу в пам'яті браузера
-        const blobUrl = URL.createObjectURL(file);
+        // Відкриваємо вікно одразу в момент дії користувача
+        const newTab = window.open('about:blank', '_blank');
 
-        // Відкриваємо нову вкладку напряму за цією унікальною адресою
-        const newTab = window.open(blobUrl, '_blank');
-
-        if (!newTab) {
-            alert('Браузер заблокував спливаюче вікно. Дозвольте спливаючі вікна!');
+        if (newTab) {
+            const blobUrl = URL.createObjectURL(file);
+            // Перенаправляємо створену вкладку на Blob-посилання вашої гри
+            newTab.location.href = blobUrl;
+        } else {
+            alert('Будь ласка, дозвольте спливаючі вікна в адресному рядку браузера!');
         }
     });
 
-    // 2. Відкриття гри за вказаним URL-посиланням у новій вкладці
+    // 2. Відкриття гри за URL-посиланням у новій вкладці
     playBtn.addEventListener('click', function() {
         const url = urlInput.value.trim();
         if (url) {

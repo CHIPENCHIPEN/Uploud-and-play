@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scratch / HTML Game Hub</title>
+    <title>HTML Game Hub</title>
     <style>
         :root {
-            --bg-color: #030712;       /* Ультра-темний сучасний фон */
-            --card-bg: #0b1329;        /* Глибокий синій відтінок для картки */
-            --accent-color: #10b981;   /* Сяючий смарагдово-зелений (Emerald) */
-            --accent-hover: #059669;   /* Темніший зелений для наведення */
-            --text-color: #f3f4f6;     /* Чистий білий текст */
-            --text-muted: #9ca3af;     /* М'який сірий текст */
-            --input-bg: #1f2937;       /* Фон полів вводу */
+            --bg-color: #0f111a;       /* Темний глибокий фон */
+            --card-bg: #1a1c28;        /* Контрастна фіолетово-темна картка */
+            --accent-color: #8b5cf6;   /* Яскравий фіолетовий колір */
+            --accent-hover: #7c3aed;   /* Фіолетовий при наведенні */
+            --text-color: #ffffff;     /* Білий текст */
+            --text-muted: #94a3b8;     /* Чіткий сірий текст */
+            --input-bg: #0f111a;       /* Фон для поля вводу */
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: radial-gradient(circle at top, #111827 0%, var(--bg-color) 100%);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
             padding: 20px;
@@ -31,57 +31,49 @@
 
         .container {
             width: 100%;
-            max-width: 540px;
+            max-width: 550px;
             background: var(--card-bg);
             padding: 40px 30px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(16, 185, 129, 0.03);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 30px rgba(139, 92, 246, 0.1);
             text-align: center;
-            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         h1 {
             font-size: 2.2rem;
-            font-weight: 800;
             margin: 0 0 10px 0;
-            background: linear-gradient(135deg, #ffffff 0%, #a7f3d0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.025em;
+            font-weight: 800;
+            color: var(--text-color);
         }
 
         .subtitle {
             color: var(--text-muted);
             margin-bottom: 35px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             line-height: 1.5;
         }
 
-        /* Оновлена геймерська зона завантаження */
         .drop-zone {
-            border: 2px dashed rgba(16, 185, 129, 0.3);
-            border-radius: 16px;
-            padding: 45px 20px;
+            border: 2px dashed var(--accent-color);
+            border-radius: 14px;
+            padding: 40px 20px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             margin-bottom: 25px;
             position: relative;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(16, 185, 129, 0.01);
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            background: rgba(139, 92, 246, 0.03);
         }
 
         .drop-zone:hover, .drop-zone.dragover {
-            background: rgba(16, 185, 129, 0.06);
-            border-color: var(--accent-color);
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            background: rgba(139, 92, 246, 0.1);
+            border-color: #a78bfa;
         }
 
-        /* Схований, але активний інпут по всій площі */
         .file-input {
             position: absolute;
             top: 0;
@@ -94,96 +86,79 @@
         }
 
         #file-label {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 500;
             color: var(--text-color);
             pointer-events: none;
             z-index: 5;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .or-divider {
             margin: 25px 0;
             color: var(--text-muted);
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.1em;
+            font-weight: bold;
+            font-size: 0.9rem;
             text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .or-divider::before, .or-divider::after {
-            content: "";
-            height: 1px;
-            width: 40px;
-            background: rgba(255, 255, 255, 0.1);
+            letter-spacing: 0.05em;
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             text-align: left;
             margin-bottom: 30px;
         }
 
         label {
             color: var(--text-muted);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        }
+
+        .url-container {
+            display: flex;
+            gap: 10px;
         }
 
         input[type="text"] {
-            width: 100%;
+            flex: 1;
             padding: 14px 16px;
             background: var(--input-bg);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
+            border: 1px solid #334155;
+            border-radius: 10px;
             color: white;
             box-sizing: border-box;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 1rem;
+            transition: border-color 0.2s;
         }
 
         input[type="text"]:focus {
             outline: none;
             border-color: var(--accent-color);
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
         }
 
-        button {
-            width: 100%;
-            padding: 16px;
+        .url-btn {
+            padding: 14px 24px;
             background-color: var(--accent-color);
-            color: #030712; 
+            color: white;
             border: none;
-            border-radius: 14px;
-            font-size: 1.1rem;
-            font-weight: 700;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            transition: background 0.2s;
+            white-space: nowrap;
         }
 
-        button:hover {
+        .url-btn:hover {
             background-color: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
 
-        button:active {
-            transform: translateY(1px);
-        }
-
-        /* Повноекранне ігрове вікно */
+        /* Повноекранна гра */
         #game-container {
             display: none;
             position: fixed;
@@ -191,7 +166,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: #000;
+            background: black;
             z-index: 9999;
         }
 
@@ -209,26 +184,55 @@
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 700;
-            font-size: 0.95rem;
+            font-weight: bold;
+            font-size: 1rem;
             z-index: 10000;
-            width: auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: background 0.2s;
         }
         
         .close-btn:hover { 
-            background: rgb(220, 38, 38);
-            transform: scale(1.02);
+            background: rgb(220, 38, 38); 
         }
     </style>
 </head>
 <body>
 
     <div class="container" id="main-ui">
-        <h1>HTML Game Hub</h1>
-        <p class="subtitle">Завантажте файл або додайте пряме посилання для миттєвого запуску гри без реклами та лагів</p>
+        <h1>Запустити Scratch / HTML гру</h1>
+        <p class="subtitle">Оберіть файл зі свого ПК або вставте посилання, щоб зіграти прямо на сайті</p>
 
-        <!-- Зона завантаження
+        <!-- Зона завантаження файлу (Гра запускається відразу) -->
+        <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" class="file-input" accept=".html">
+            <span id="file-label">
+                <span style="font-size: 2rem;">📁</span>
+                <span>Обрати або перетягнути .html файл з ПК</span>
+            </span>
+        </div>
+
+        <div class="or-divider">АБО</div>
+
+        <!-- Запуск по посиланню -->
+        <div class="input-group">
+            <label for="url-input">Пряме посилання на гру:</label>
+            <div class="url-container">
+                <input type="text" id="url-input" placeholder="https://example.com">
+                <button class="url-btn" id="play-url-btn">Грати 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вікно для iframe гри -->
+    <div id="game-container">
+        <button class="close-btn" id="close-btn">❌ Закрити гру</button>
+        <iframe id="game-frame" allow="fullscreen; autoplay" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const fileLabel = document.getElementById('file-label');
+        const urlInput = document.ge

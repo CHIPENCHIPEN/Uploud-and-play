@@ -6,12 +6,12 @@
     <title>Запустити Scratch / HTML гру</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #6366f1;
-            --accent-hover: #4f46e5;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-color: #020617;       /* Майже чорний геймерський фон */
+            --card-bg: #0f172a;        /* Темно-сіра картка форми */
+            --accent-color: #06b6d4;   /* Яскравий неоново-блакитний (ціан) */
+            --accent-hover: #0891b2;   /* Колір кнопок при наведенні */
+            --text-color: #f8fafc;     /* Головний білий текст */
+            --text-muted: #64748b;     /* Другорядний сірий текст */
         }
 
         body {
@@ -33,7 +33,7 @@
             background: var(--card-bg);
             padding: 30px;
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             text-align: center;
             transition: all 0.3s ease;
         }
@@ -41,6 +41,7 @@
         h1 {
             font-size: 1.8rem;
             margin-bottom: 10px;
+            color: var(--text-color);
         }
 
         .subtitle {
@@ -49,27 +50,50 @@
             font-size: 1rem;
         }
 
+        /* Оновлена зона завантаження */
         .drop-zone {
             border: 2px dashed var(--accent-color);
             border-radius: 12px;
-            padding: 30px 20px;
+            padding: 40px 20px;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: background 0.2s ease, border-color 0.2s ease;
             margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .drop-zone:hover, .drop-zone.dragover {
-            background: rgba(99, 102, 241, 0.1);
+            background: rgba(6, 182, 212, 0.1);
+            border-color: #22d3ee;
         }
 
+        /* Невидимий інпут, розтягнутий на всю зону для кліків на iOS */
         .file-input {
-            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #file-label {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            pointer-events: none; /* Щоб текст не заважав клікати по інпуту */
+            z-index: 5;
         }
 
         .or-divider {
             margin: 20px 0;
             color: var(--text-muted);
-            position: relative;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
         .input-group {
@@ -83,37 +107,49 @@
         label {
             color: var(--text-muted);
             font-size: 0.9rem;
+            font-weight: 600;
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 12px;
-            background: #0f172a;
-            border: 1px solid #334155;
+            padding: 14px;
+            background: #020617;
+            border: 1px solid #1e293b;
             border-radius: 8px;
             color: white;
             box-sizing: border-box;
             font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
         }
 
         button {
             width: 100%;
             padding: 14px;
             background-color: var(--accent-color);
-            color: white;
+            color: #020617; /* Темний текст на світлій кнопці для контрасту */
             border: none;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
         button:hover {
             background-color: var(--accent-hover);
+            color: white;
         }
 
-        /* Контейнер гри */
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Вікно гри на весь екран */
         #game-container {
             display: none;
             position: fixed;
@@ -135,16 +171,21 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(239, 68, 68, 0.85);
+            background: rgba(239, 68, 68, 0.9);
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 0.9rem;
             z-index: 10000;
+            width: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .close-btn:hover { background: rgb(220, 38, 38); }
+        .close-btn:hover { 
+            background: rgb(220, 38, 38); 
+        }
     </style>
 </head>
 <body>
@@ -155,8 +196,8 @@
 
         <!-- Завантаження файлу -->
         <div class="drop-zone" id="drop-zone">
-            <span id="file-label">📁 Обрати або перетягнути .html файл</span>
             <input type="file" id="file-input" class="file-input" accept=".html">
+            <span id="file-label">📁 Обрати або перетягнути .html файл</span>
         </div>
 
         <div class="or-divider">АБО</div>
@@ -170,7 +211,7 @@
         <button id="play-btn">Грати 🚀</button>
     </div>
 
-    <!-- Вікно для iframe гри -->
+    <!-- Повноекранне вікно для iframe гри -->
     <div id="game-container">
         <button class="close-btn" id="close-btn">❌ Закрити гру</button>
         <iframe id="game-frame" sandbox="allow-scripts allow-same-origin"></iframe>
@@ -188,47 +229,6 @@
 
         let selectedFileBlob = null;
 
-        // --- РОБОТА З INDEXEDDB (Для захисту від збоїв на iOS) ---
+        // --- РОБОТА З INDEXEDDB (Захист від crash-перезавантажень на iOS) ---
         function openDB() {
-            return new Promise((resolve) => {
-                let request = indexedDB.open("GameStorage", 1);
-                request.onupgradeneeded = (e) => {
-                    e.target.result.createObjectStore("games");
-                };
-                request.onsuccess = (e) => resolve(e.target.result);
-            });
-        }
-
-        async function saveToDB(blob) {
-            let db = await openDB();
-            let tx = db.transaction("games", "readwrite");
-            tx.objectStore("games").put(blob, "last_game");
-        }
-
-        async function getFromDB() {
-            let db = await openDB();
-            return new Promise((resolve) => {
-                let tx = db.transaction("games", "readonly");
-                let req = tx.objectStore("games").get("last_game");
-                req.onsuccess = () => resolve(req.result);
-            });
-        }
-
-        async function clearDB() {
-            let db = await openDB();
-            let tx = db.transaction("games", "readwrite");
-            tx.objectStore("games").delete("last_game");
-        }
-
-        // Автозапуск гри після crash-перезавантаження сторінки
-        window.addEventListener('DOMContentLoaded', async () => {
-            const savedUrl = localStorage.getItem('last_url');
-            if (savedUrl) {
-                urlInput.value = savedUrl;
-                launchGame(savedUrl);
-                return;
-            }
-
-            const savedBlob = await getFromDB();
-            if (savedBlob) {
-                const objectURL = URL.createObjectURL(savedBlo
+            return new Promi

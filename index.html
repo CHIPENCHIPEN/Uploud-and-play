@@ -6,13 +6,13 @@
     <title>HTML Game Hub</title>
     <style>
         :root {
-            --bg-color: #0f111a;       /* Темний глибокий фон */
-            --card-bg: #1a1c28;        /* Контрастна фіолетово-темна картка */
-            --accent-color: #8b5cf6;   /* Яскравий фіолетовий колір */
-            --accent-hover: #7c3aed;   /* Фіолетовий при наведенні */
-            --text-color: #ffffff;     /* Білий текст */
-            --text-muted: #94a3b8;     /* Чіткий сірий текст */
-            --input-bg: #0f111a;       /* Фон для поля вводу */
+            --bg-color: #0f111a;       /* Темный глубокий фон */
+            --card-bg: #1a1c28;        /* Контрастная фиолетово-темная картока */
+            --accent-color: #8b5cf6;   /* Яркий фиолетовый цвет */
+            --accent-hover: #7c3aed;   /* Фиолетовый при наведении */
+            --text-color: #ffffff;     /* Белый текст */
+            --text-muted: #94a3b8;     /* Четкий серый текст */
+            --input-bg: #0f111a;       /* Фон для поля ввода */
         }
 
         body {
@@ -158,9 +158,9 @@
             background-color: var(--accent-hover);
         }
 
-        /* --- ІГРОВА ЗОНА ТУРБОВАРП 480x360 --- */
+        /* --- ИГРОВОЕ ОКНО TURBOWARP СТАНДАРТ 480x360 --- */
         #game-wrapper {
-            display: none; /* З'являється тільки під час гри */
+            display: none; /* Скрыто до момента запуска */
             width: 480px;
             height: 360px;
             background: #000000;
@@ -181,16 +181,16 @@
 
         .close-game-btn {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            bottom: 15px;
+            right: 15px;
             background: rgba(239, 68, 68, 0.85);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             z-index: 100;
             transition: background 0.2s;
         }
@@ -206,7 +206,7 @@
         <h1>Запустити Scratch / HTML гру</h1>
         <p class="subtitle">Оберіть файл зі свого ПК або вставте посилання, щоб зіграти прямо на сайті</p>
 
-        <!-- Зона завантаження файлу (Гра запускається ТУТ) -->
+        <!-- Зона загрузки файла (Игра открывается здесь) -->
         <div class="drop-zone" id="drop-zone">
             <input type="file" id="file-input" class="file-input" accept=".html">
             <span id="file-label">
@@ -217,7 +217,7 @@
 
         <div class="or-divider">АБО</div>
 
-        <!-- Запуск по посиланню -->
+        <!-- Запуск по ссылке -->
         <div class="input-group">
             <label for="url-input">Пряме посилання на гру:</label>
             <div class="url-container">
@@ -227,7 +227,10 @@
         </div>
     </div>
 
-    <!-- Вбудоване ігрове вікно точно 480х360 прямо на сторінці -->
+    <!-- Игровой плеер 480х360 прямо на странице -->
     <div id="game-wrapper">
         <button class="close-game-btn" id="close-game-btn">❌ Вийти</button>
         <iframe id="game-frame" allow="fullscreen; autoplay" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
+    </div>
+
+    <sc

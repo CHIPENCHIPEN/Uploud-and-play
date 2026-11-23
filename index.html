@@ -1,4 +1,4 @@
-<!Doctype html>
+<!doctype html>
 <html lang="uk">
 <head>
 <meta charset="utf-8">
@@ -100,4 +100,274 @@
   .dlg p{margin:0 0 14px;color:var(--muted);font-size:14px;word-break:break-word}
   .dlg input{width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:11px 13px;border-radius:10px;font:inherit;margin-bottom:14px;outline:none}
   .dlg input:focus{border-color:var(--a)}
-  .dlg .r{display:flex;g
+  .dlg .r{display:flex;gap:8px;justify-content:flex-end}
+  .btn.red{background:var(--danger);box-shadow:none}
+  #loader{position:absolute;top:60px;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;color:var(--muted);z-index:1;pointer-events:none;font-size:15px}
+  .pbar{flex-wrap:wrap}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--line);padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:80}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  @media(max-width:520px){.nav .btn span{display:none}}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="logo">
+    <i><svg viewBox="0 0 24 24"><path d="M6 3l15 9-15 9z"/></svg></i>
+    Uploud and Play
+  </div>
+  <button class="btn sm" id="addBtn">+ <span>Завантажити гру</span></button>
+</div>
+
+<main>
+  <section class="hero">
+    <h1>Завантаж. <span>Грай.</span> Без обмежень.</h1>
+    <p>Кинь сюди HTML-файл своєї гри, наприклад з TurboWarp Packager, і запускай одразу. Жодних лімітів на кількість скриптів.</p>
+
+    <div class="drop" id="drop">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 16V4M12 4l-5 5M12 4l5 5M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg></div>
+      <h2>Перетягни .html файл сюди</h2>
+      <p>або натисни, щоб вибрати з комп'ютера</p>
+    </div>
+    <input type="file" id="file" accept=".html,.htm,text/html" multiple hidden>
+  </section>
+
+  <div class="lib-head">
+    <h3>Мої ігри <small id="count"></small></h3>
+    <input class="search" id="search" type="search" placeholder="Пошук гри...">
+  </div>
+  <div class="grid" id="list"></div>
+  <div class="empty" id="empty">Тут поки що порожньо. Завантаж першу гру вище.</div>
+
+  <p class="foot">
+    Ігри зберігаються тільки у твоєму браузері й нікуди не відправляються.<br>
+    Щоб ділитися з друзями, розмісти цю сторінку разом з грою на GitHub Pages, Netlify або itch.io.
+  </p>
+</main>
+
+<div id="player">
+  <div class="pbar">
+    <button class="btn sm ghost" id="close">← Назад</button>
+    <div class="t" id="ptitle"></div>
+    <button class="btn sm ghost" id="tab">Нова вкладка</button>
+    <button class="btn sm ghost" id="mode">Інший режим</button>
+    <button class="btn sm ghost" id="reload">Перезапустити</button>
+    <button class="btn sm" id="full">На весь екран</button>
+  </div>
+  <iframe id="frame"
+    allow="fullscreen; autoplay; gamepad; microphone; camera; clipboard-write; pointer-lock"
+    allowfullscreen></iframe>
+  <div id="loader">Завантаження гри…</div>
+</div>
+<div class="dlg" id="dlg">
+  <div class="box">
+    <h4 id="dlgTitle"></h4>
+    <p id="dlgText"></p>
+    <input id="dlgInput" type="text">
+    <div class="r">
+      <button class="btn sm ghost" id="dlgNo">Скасувати</button>
+      <button class="btn sm" id="dlgOk">OK</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DB_NAME='uploud-and-play', STORE='games';
+let dbp;
+function db(){
+  if(dbp) return dbp;
+  dbp=new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,1);
+    r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id',autoIncrement:true});
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+  return dbp;
+}
+async function req(mode,fn){
+  const d=await db();
+  return new Promise((res,rej)=>{
+    const t=d.transaction(STORE,mode);
+    const r=fn(t.objectStore(STORE));
+    t.oncomplete=()=>res(r&&r.result);
+    t.onerror=()=>rej(t.error);
+  });
+}
+const putGame=g=>req('readwrite',s=>s.put(g));
+const delGame=id=>req('readwrite',s=>s.delete(id));
+const allGames=()=>req('readonly',s=>s.getAll());
+const getGame=id=>req('readonly',s=>s.get(id));
+
+const $=id=>document.getElementById(id);
+const getBlob=g=>g.blob||new Blob([g.html||''],{type:'text/html'}); // старі записи мали текст
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+const fmt=n=>n>1048576?(n/1048576).toFixed(1)+' МБ':Math.max(1,Math.round(n/1024))+' КБ';
+function toast(m){
+  const t=$('toast');t.textContent=m;t.classList.add('show');
+  clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function hue(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h}
+const ICONS={
+  dl:'<svg viewBox="0 0 24 24"><path d="M12 4v12M12 16l-5-5M12 16l5-5M4 20h16"/></svg>',
+  ed:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 00-4-4L4 16z"/></svg>',
+  rm:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12M9 7V4h6v3"/></svg>'
+};
+
+async function render(){
+  const q=$('search').value.trim().toLowerCase();
+  const all=(await allGames()).sort((a,b)=>b.added-a.added);
+  const games=all.filter(g=>g.name.toLowerCase().includes(q));
+  $('count').textContent=all.length?`(${all.length})`:'';
+  const list=$('list');list.innerHTML='';
+  $('empty').style.display=games.length?'none':'block';
+  $('empty').textContent=all.length?'Нічого не знайдено.':'Тут поки що порожньо. Завантаж першу гру вище.';
+
+  for(const g of games){
+    const h=hue(g.name);
+    const el=document.createElement('div');el.className='card';
+    el.innerHTML=`
+      <div class="thumb" style="background:linear-gradient(135deg,hsl(${h} 70% 48%),hsl(${(h+50)%360} 75% 58%))">
+        <span class="ltr"></span>
+        <div class="pl"><svg viewBox="0 0 24 24"><path d="M6 3l15 9-15 9z"/></svg></div>
+      </div>
+      <div class="body">
+        <div><div class="name"></div><div class="meta"></div></div>
+        <div class="acts">
+          <button class="btn sm play">Грати</button>
+          <button class="ib dl" title="Завантажити">${ICONS.dl}</button>
+          <button class="ib ed" title="Перейменувати">${ICONS.ed}</button>
+          <button class="ib del" title="Видалити">${ICONS.rm}</button>
+        </div>
+      </div>`;
+    el.querySelector('.ltr').textContent=(g.name.trim()[0]||'?').toUpperCase();
+    el.querySelector('.name').textContent=g.name;
+    el.querySelector('.meta').textContent=fmt(g.size)+' • '+new Date(g.added).toLocaleDateString('uk-UA');
+    el.querySelector('.thumb').onclick=()=>openGame(g.id);
+    el.querySelector('.play').onclick=()=>openGame(g.id);
+    el.querySelector('.dl').onclick=()=>{
+      const a=document.createElement('a');
+      const u=URL.createObjectURL(getBlob(g));
+      a.href=u;a.download=g.name+'.html';a.click();
+      setTimeout(()=>URL.revokeObjectURL(u),10000);
+    };
+    el.querySelector('.ed').onclick=async()=>{
+      const n=await ask({title:'Перейменувати гру',value:g.name,ok:'Зберегти'});
+      if(n&&n.trim()){g.name=n.trim();await putGame(g);render();}
+    };
+    el.querySelector('.del').onclick=async()=>{
+      const yes=await ask({title:'Видалити гру?',text:'«'+g.name+'» буде видалено з цього браузера.',ok:'Видалити',danger:true});
+      if(yes){
+        try{await delGame(g.id);toast('Видалено');}
+        catch(e){toast('Не вдалося видалити: '+(e.message||e));}
+        render();
+      }
+    };
+    list.append(el);
+  }
+}
+
+async function addFiles(files){
+  let n=0;
+  for(const f of files){
+    if(!/\.html?$/i.test(f.name)){toast('Пропущено '+f.name+': потрібен .html');continue;}
+    toast('Зберігаю «'+f.name+'» ('+fmt(f.size)+')...');
+    try{
+      // зберігаємо сам файл (Blob), а не текст: великі проєкти не завантажуються в пам'ять
+      await putGame({name:f.name.replace(/\.html?$/i,''),blob:f.slice(0,f.size,'text/html'),size:f.size,added:Date.now()});
+      n++;
+    }catch(err){
+      toast('Не вдалося зберегти: '+(err&&err.name==='QuotaExceededError'?'немає місця в браузері':err.message||err));
+    }
+  }
+  if(n){toast(n===1?'Гру додано':'Додано ігор: '+n);render();}
+}
+
+function ask({title,text='',value=null,ok='OK',danger=false}){
+  // власне вікно замість confirm/prompt: вони мовчки блокуються в деяких браузерах і переглядачах
+  return new Promise(res=>{
+    const d=$('dlg'),inp=$('dlgInput'),b=$('dlgOk'),no=$('dlgNo');
+    $('dlgTitle').textContent=title;
+    $('dlgText').textContent=text;
+    $('dlgText').style.display=text?'block':'none';
+    inp.style.display=value===null?'none':'block';
+    inp.value=value||'';
+    b.textContent=ok;b.className='btn sm'+(danger?' red':'');
+    d.classList.add('show');
+    if(value!==null)setTimeout(()=>{inp.focus();inp.select();},30);
+    const done=v=>{d.classList.remove('show');b.onclick=no.onclick=inp.onkeydown=d.onclick=null;res(v);};
+    b.onclick=()=>done(value===null?true:inp.value);
+    no.onclick=()=>done(null);
+    d.onclick=e=>{if(e.target===d)done(null);};
+    inp.onkeydown=e=>{if(e.key==='Enter')b.onclick();if(e.key==='Escape')done(null);};
+  });
+}
+
+let blobUrl=null,currentId=null,forceSrcdoc=false;
+async function openGame(id){
+  try{
+    const g=await getGame(id);
+    if(!g){toast('Гру не знайдено');return;}
+    currentId=id;
+    $('ptitle').textContent=g.name;
+    $('player').classList.add('show');
+    $('loader').style.display='flex';
+    document.body.style.overflow='hidden';
+    const f=$('frame');
+    f.onload=()=>{$('loader').style.display='none';};
+    f.removeAttribute('srcdoc');
+    if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}
+    const blob=getBlob(g);
+    const useDoc=forceSrcdoc||location.protocol==='file:'||location.origin==='null';
+    if(useDoc){
+      // вбудований режим: працює всюди, але важчий для дуже великих файлів
+      f.srcdoc=await blob.text();
+    }else{
+      // потоковий режим: браузер читає файл сам, без зависань на 45+ МБ
+      blobUrl=URL.createObjectURL(blob);
+      f.src=blobUrl;
+    }
+  }catch(e){
+    $('loader').style.display='none';
+    toast('Помилка запуску: '+(e&&e.message||e));
+  }
+}
+function closePlayer(){
+  $('player').classList.remove('show');
+  $('frame').removeAttribute('srcdoc');
+  $('frame').src='about:blank';
+  if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}
+  document.body.style.overflow='';
+}
+
+$('addBtn').onclick=()=>$('file').click();
+$('drop').onclick=()=>$('file').click();
+$('file').onchange=e=>{addFiles([...e.target.files]);e.target.value='';};
+['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over');}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over');}));
+$('drop').addEventListener('drop',e=>addFiles([...e.dataTransfer.files]));
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>e.preventDefault());
+$('search').oninput=render;
+$('close').onclick=closePlayer;
+$('reload').onclick=()=>{if(currentId!=null)openGame(currentId);};
+$('mode').onclick=()=>{
+  if(currentId==null)return;
+  forceSrcdoc=!forceSrcdoc;
+  toast(forceSrcdoc?'Режим: вбудований':'Режим: потоковий');
+  openGame(currentId);
+};
+$('tab').onclick=async()=>{
+  const g=currentId!=null&&await getGame(currentId);if(!g)return;
+  const u=URL.createObjectURL(getBlob(g));
+  if(!window.open(u,'_blank'))toast('Браузер заблокував нову вкладку: дозволь спливаючі вікна');
+  setTimeout(()=>URL.revokeObjectURL(u),300000);
+};
+$('full').onclick=()=>{const f=$('frame');(f.requestFullscreen||f.webkitRequestFullscreen).call(f);};
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!document.fullscreenElement&&$('player').classList.contains('show'))closePlayer();
+});
+render();
+</script>
+</body>
+</html>

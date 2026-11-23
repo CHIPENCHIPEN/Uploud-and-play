@@ -1,236 +1,103 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML Game Hub</title>
-    <style>
-        :root {
-            --bg-color: #0f111a;     
-            --card-bg: #1a1c28;       
-            --accent-color: #8b5cf6;  
-            --accent-hover: #7c3aed;   
-            --text-color: #ffffff;    
-            --text-muted: #94a3b8;   
-            --input-bg: #0f111a;     
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uploud and Play</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236c5ce7'/%3E%3Cstop offset='1' stop-color='%23ff6b9d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M25 18l22 14-22 14z' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0b0b14; --surface:#14141f; --surface2:#1b1b2a; --line:#262638;
+    --text:#f2f2f8; --muted:#9a9ab3;
+    --a:#6c5ce7; --b:#ff6b9d; --ok:#2ee6a6; --danger:#ff5c7a;
+    --grad:linear-gradient(135deg,var(--a),var(--b));
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--text);min-height:100vh;
+    background-image:
+      radial-gradient(700px 400px at 15% -5%,rgba(108,92,231,.28),transparent 60%),
+      radial-gradient(600px 380px at 90% 0%,rgba(255,107,157,.18),transparent 60%);
+    background-repeat:no-repeat;
+  }
+  button{font:inherit;cursor:pointer;border:0;color:inherit}
 
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
+  /* top bar */
+  .nav{display:flex;align-items:center;justify-content:space-between;max-width:1080px;margin:0 auto;padding:18px 20px}
+  .logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;letter-spacing:-.2px}
+  .logo i{width:38px;height:38px;border-radius:11px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 20px rgba(108,92,231,.45)}
+  .logo i svg{width:18px;height:18px;fill:#fff;margin-left:2px}
+  .btn{background:var(--grad);color:#fff;font-weight:700;padding:11px 20px;border-radius:12px;box-shadow:0 8px 24px rgba(108,92,231,.35);transition:transform .12s,box-shadow .12s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(108,92,231,.5)}
+  .btn:active{transform:translateY(0)}
+  .btn.sm{padding:8px 14px;font-size:14px;border-radius:10px;box-shadow:none}
+  .btn.ghost{background:var(--surface2);box-shadow:none;border:1px solid var(--line);color:var(--text)}
+  .btn.ghost:hover{background:#232336}
 
-        .container {
-            width: 100%;
-            max-width: 550px;
-            background: var(--card-bg);
-            padding: 35px 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 30px rgba(139, 92, 246, 0.1);
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 25px;
-        }
+  main{max-width:1080px;margin:0 auto;padding:0 20px 80px}
 
-        h1 {
-            font-size: 2rem;
-            margin: 0 0 10px 0;
-            font-weight: 800;
-            color: var(--text-color);
-        }
+  /* hero */
+  .hero{text-align:center;padding:44px 0 28px}
+  .hero h1{margin:0;font-size:clamp(34px,6vw,56px);line-height:1.05;font-weight:800;letter-spacing:-1.5px}
+  .hero h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{margin:16px auto 0;max-width:520px;color:var(--muted);font-size:17px;line-height:1.5}
 
-        .subtitle {
-            color: var(--text-muted);
-            margin-bottom: 30px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
+  .drop{
+    margin:32px auto 0;max-width:680px;padding:38px 24px;border-radius:22px;text-align:center;cursor:pointer;
+    background:linear-gradient(var(--surface),var(--surface)) padding-box,
+               linear-gradient(135deg,rgba(108,92,231,.7),rgba(255,107,157,.7)) border-box;
+    border:2px dashed transparent;transition:transform .15s,box-shadow .15s;
+  }
+  .drop:hover,.drop.over{transform:translateY(-2px);box-shadow:0 18px 50px rgba(108,92,231,.25)}
+  .drop.over{background:linear-gradient(#1a1a2c,#1a1a2c) padding-box,linear-gradient(135deg,#6c5ce7,#ff6b9d) border-box}
+  .drop .ic{width:64px;height:64px;margin:0 auto 14px;border-radius:18px;background:var(--grad);display:grid;place-items:center}
+  .drop .ic svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .drop h2{margin:0 0 6px;font-size:20px}
+  .drop p{margin:0;color:var(--muted);font-size:14px}
 
-        .drop-zone {
-            border: 2px dashed var(--accent-color);
-            border-radius: 14px;
-            padding: 35px 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(139, 92, 246, 0.03);
-        }
+  /* library */
+  .lib-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:48px 0 18px;flex-wrap:wrap}
+  .lib-head h3{margin:0;font-size:22px;letter-spacing:-.3px}
+  .lib-head h3 small{color:var(--muted);font-weight:500;font-size:14px;margin-left:8px}
+  .search{background:var(--surface);border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:12px;font:inherit;width:240px;max-width:100%;outline:none}
+  .search:focus{border-color:var(--a)}
 
-        .drop-zone:hover, .drop-zone.dragover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: #a78bfa;
-        }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s}
+  .card:hover{transform:translateY(-3px);border-color:#3a3a56}
+  .thumb{height:130px;position:relative;display:grid;place-items:center;font-size:52px;font-weight:800;color:rgba(255,255,255,.92);cursor:pointer}
+  .thumb::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,0);transition:.15s}
+  .thumb:hover::after{background:rgba(0,0,0,.25)}
+  .thumb .pl{position:absolute;z-index:1;width:48px;height:48px;border-radius:50%;background:#fff;display:grid;place-items:center;opacity:0;transform:scale(.8);transition:.15s}
+  .thumb:hover .pl{opacity:1;transform:scale(1)}
+  .thumb .pl svg{width:20px;height:20px;fill:#111;margin-left:3px}
+  .card .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .name{font-weight:700;font-size:16px;word-break:break-word;line-height:1.25}
+  .meta{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .acts{display:flex;gap:8px}
+  .acts .btn{flex:1}
+  .ib{width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .ib:hover{background:#232336}
+  .ib svg{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ib.del:hover svg{stroke:var(--danger)}
 
-        .file-input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-            z-index: 10;
-        }
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;border:1px dashed var(--line);border-radius:18px}
+  .foot{margin-top:50px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
 
-        #file-label {
-            font-size: 1.05rem;
-            font-weight: 500;
-            color: var(--text-color);
-            pointer-events: none;
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+  /* player */
+  #player{position:fixed;inset:0;background:#000;display:none;flex-direction:column;z-index:50}
+  #player.show{display:flex}
+  .pbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .pbar .t{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #frame{flex:1 1 0;min-height:0;width:100%;height:100%;border:0;background:#000;display:block}
 
-        .or-divider {
-            margin: 20px 0;
-            color: var(--text-muted);
-            font-weight: bold;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            text-align: left;
-        }
-
-        label {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .url-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 14px 16px;
-            background: var(--input-bg);
-            border: 1px solid #334155;
-            border-radius: 10px;
-            color: white;
-            box-sizing: border-box;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .url-btn {
-            padding: 14px 24px;
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-
-        .url-btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        /* --- ИГРОВОЕ ОКНО TURBOWARP СТАНДАРТ 480x360 --- */
-        #game-wrapper {
-            display: none; /* Скрыто до момента запуска */
-            width: 480px;
-            height: 360px;
-            background: #000000;
-            border-radius: 16px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 92, 246, 0.2);
-            border: 3px solid var(--accent-color);
-            margin-bottom: 30px;
-        }
-
-        iframe {
-            width: 480px;
-            height: 360px;
-            border: none;
-            display: block;
-        }
-
-        .close-game-btn {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(239, 68, 68, 0.85);
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.85rem;
-            z-index: 100;
-            transition: background 0.2s;
-        }
-
-        .close-game-btn:hover {
-            background: rgb(220, 38, 38);
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container" id="main-ui">
-        <h1>Запустити Scratch / HTML гру</h1>
-        <p class="subtitle">Оберіть файл зі свого ПК або вставте посилання, щоб зіграти прямо на сайті</p>
-
-        <!-- Зона загрузки файла (Игра открывается здесь) -->
-        <div class="drop-zone" id="drop-zone">
-            <input type="file" id="file-input" class="file-input" accept=".html">
-            <span id="file-label">
-                <span style="font-size: 2rem;">📁</span>
-                <span>Обрати або перетягнути .html файл з ПК</span>
-            </span>
-        </div>
-
-        <div class="or-divider">АБО</div>
-
-     
-        <div class="input-group">
-            <label for="url-input">Пряме посилання на гру:</label>
-            <div class="url-container">
-                <input type="text" id="url-input" placeholder="https://example.com">
-                <button class="url-btn" id="play-url-btn">Грати 🚀</button>
-            </div>
-        </div>
-    </div>
-
-
-    <div id="game-wrapper">
-        <button class="close-game-btn" id="close-game-btn">❌ Вийти</button>
-        <iframe id="game-frame" allow="fullscreen; autoplay" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
-    </div>
-
-    <sc
+  .dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:90;padding:20px}
+  .dlg.show{display:grid}
+  .dlg .box{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;width:100%;max-width:380px}
+  .dlg h4{margin:0 0 8px;font-size:18px}
+  .dlg p{margin:0 0 14px;color:var(--muted);font-size:14px;word-break:break-word}
+  .dlg input{width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:11px 13px;border-radius:10px;font:inherit;margin-bottom:14px;outline:none}
+  .dlg input:focus{border-color:var(--a)}
+  .dlg .r{display:flex;g
